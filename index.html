@@ -1,0 +1,2522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Madhav Tiwari — Professional Problem Maker (with Claude)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700,900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #F5F2F3;
+            --text: #021F94;
+            --muted: #5a6a9a;
+            --border: #d4d0cc;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Satoshi', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            cursor: none;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        ::selection { background: #021F94; color: #F5F2F3; }
+        a { color: inherit; text-decoration: none; cursor: none; }
+
+        /* (horizontal scroll removed — normal vertical layout) */
+
+        /* ─── CURSOR ─── */
+        .cursor {
+            position: fixed;
+            width: 28px;
+            height: 28px;
+            border: 1.5px solid var(--text);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.2s,
+                        background 0.2s;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor.hover {
+            width: 52px;
+            height: 52px;
+            border-color: var(--text);
+            background: rgba(2, 31, 148, 0.05);
+        }
+
+        .cursor.click {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* ─── SCROLL PROGRESS ─── */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--text);
+            z-index: 10001;
+            width: 0%;
+        }
+
+        /* ─── SIDE PROGRESS ─── */
+        .side-progress {
+            position: fixed;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .side-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            transition: all 0.3s;
+            cursor: none;
+        }
+
+        .side-dot.active {
+            background: var(--text);
+            border-color: var(--text);
+            transform: scale(1.4);
+        }
+
+        /* ─── GRAIN ─── */
+        .grain {
+            position: fixed;
+            inset: -50%;
+            width: 200%;
+            height: 200%;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* ─── LOADER ─── */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--text);
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.8s ease;
+            will-change: opacity;
+        }
+
+        .loader.done {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader-text {
+            font-family: 'Clash Display', sans-serif;
+            font-size: clamp(36px, 6vw, 72px);
+            color: var(--bg);
+            font-weight: 500;
+            overflow: hidden;
+        }
+
+        .loader-text span {
+            display: inline-block;
+            animation: loaderChar 0.5s forwards;
+            opacity: 0;
+            transform: translateY(100%);
+        }
+
+        @keyframes loaderChar { to { opacity: 1; transform: translateY(0); } }
+
+        .loader-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: rgba(245,242,243,0.4);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 16px;
+        }
+
+        .loader-progress-wrap {
+            width: min(320px, 70vw);
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loader-bar-track {
+            width: 100%;
+            height: 3px;
+            background: rgba(245,242,243,0.12);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loader-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--bg);
+            border-radius: 2px;
+            transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .loader-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: rgba(245,242,243,0.5);
+            letter-spacing: 2px;
+        }
+
+        /* ─── NAV ─── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-name {
+            font-family: 'Clash Display', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }        .nav-links {
+            display: flex;
+            gap: 24px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .nav-links a { position: relative; padding: 4px 0; }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1.5px;
+            background: var(--text);
+            transition: width 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* ─── HERO ─── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0 48px 60px;
+            position: relative;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 60px;
+            align-items: end;
+        }
+
+        .hero-left h1 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: clamp(72px, 12vw, 200px);
+            font-weight: 500;
+            line-height: 0.88;
+            letter-spacing: -5px;
+        }
+
+        .hero-left h1 .line {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero-left h1 .line span {
+            display: inline-block;
+            transform: translateY(110%);
+            animation: heroReveal 1s 1.4s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hero-left h1 .line:nth-child(2) span {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400;
+            font-style: italic;
+            letter-spacing: -2px;
+        }
+
+        @keyframes heroReveal { to { transform: translateY(0); } }
+
+        .hero-location {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeUp 0.8s 1.2s forwards;
+        }
+
+        .hero-location-dot {
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero-location-sep {
+            color: var(--border);
+        }
+
+        .hero-subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 20px;
+            opacity: 0;
+            animation: fadeUp 0.8s 1.7s forwards;
+        }
+
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            padding-bottom: 12px;
+        }
+
+        /* ─── HERO LANDSCAPE CARD ─── */
+        .hero-photo-wrap {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+
+        .hero-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 30%;
+            display: block;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hero-photo-wrap:hover .hero-photo {
+            transform: scale(1.04);
+        }
+
+        .hero-photo-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to top,
+                rgba(2,31,148,0.30) 0%,
+                rgba(2,31,148,0.05) 50%,
+                transparent 100%
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-avatar-float {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid rgba(245,242,243,0.85);
+            overflow: hidden;
+            z-index: 2;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        }
+
+        .hero-avatar-float img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-photo-badge {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(245,242,243,0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            z-index: 2;
+            white-space: nowrap;
+            border: 1px solid rgba(2,31,148,0.12);
+        }
+
+        .hero-desc {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.9;
+            max-width: 380px;
+            opacity: 0;
+            animation: fadeUp 0.8s 1.9s forwards;
+        }
+
+        .hero-desc strong { color: var(--text); font-weight: 500; }
+
+        .hero-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeUp 0.8s 2.1s forwards;
+        }
+
+        .hero-tags span {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .hero-tags span:hover {
+            background: var(--text);
+            color: var(--bg);
+            border-color: var(--text);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 36px;
+            left: 48px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .scroll-line {
+            width: 40px;
+            height: 1px;
+            background: var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scroll-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--text);
+            animation: scrollPulse 2s infinite;
+        }
+
+        @keyframes scrollPulse { 0%{left:-100%} 100%{left:100%} }
+
+        /* ─── MARQUEE ─── */
+        .marquee-section {
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            overflow: hidden;
+        }
+
+        .marquee {
+            display: flex;
+            animation: marquee 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        .marquee span {
+            font-family: 'Instrument Serif', serif;
+            font-size: 20px;
+            font-style: italic;
+            color: var(--border);
+            padding: 0 20px;
+        }
+
+        .marquee span em {
+            color: var(--text);
+            font-style: normal;
+            font-family: 'Clash Display', sans-serif;
+            font-weight: 500;
+        }
+
+        @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+        /* ─── SECTION LABEL ─── */
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 60px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+            transform-origin: left;
+            transform: scaleX(0);
+        }
+
+        .section-label.revealed::after {
+            animation: lineReveal 1s forwards;
+        }
+
+        @keyframes lineReveal { to { transform: scaleX(1); } }
+
+        /* ─── ABOUT ─── */
+        .about {
+            padding: 180px 48px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 100px;
+        }
+
+        .about h2 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: clamp(36px, 4.5vw, 60px);
+            font-weight: 500;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+        }
+
+        .about h2 .serif {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .about-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .about-right p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 2;
+        }
+
+        .about-right p strong { color: var(--text); font-weight: 500; }
+
+        .about-fun {
+            margin-top: 12px;
+            padding: 16px 20px;
+            border-left: 2px solid var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .about-code-block {
+            margin-top: 32px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--text);
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .code-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .code-dot.red { background: #ff5f57; }
+        .code-dot.yellow { background: #febc2e; }
+        .code-dot.green { background: #28c840; }
+
+        .code-filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: rgba(245,242,243,0.5);
+            margin-left: auto;
+        }
+
+        .code-body {
+            padding: 20px;
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+            color: var(--bg);
+            overflow-x: auto;
+        }
+
+        .code-kw { color: #c8ff00; }
+        .code-var { color: #7dd3fc; }
+        .code-key { color: #fbbf24; }
+        .code-str { color: #86efac; }
+
+        /* ─── HORIZONTAL SCROLL ─── */
+        .horizontal-section {
+            padding: 120px 0;
+            overflow: hidden;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .horizontal-wrapper {
+            display: flex;
+            gap: 40px;
+            padding: 0 48px;
+            width: max-content;
+            animation: horizontalScroll 25s linear infinite;
+        }
+
+        .horizontal-card {
+            flex-shrink: 0;
+            width: 300px;
+            padding: 36px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg);
+            transition: all 0.4s;
+        }
+
+        .horizontal-card:hover {
+            border-color: var(--text);
+            transform: translateY(-8px) rotate(-1deg);
+        }
+
+        .horizontal-card h3 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .horizontal-card p {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .horizontal-card .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 14px;
+        }
+
+        @keyframes horizontalScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+        /* ─── STATS ─── */
+        .stats {
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .stat-item {
+            padding: 56px 32px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            perspective: 800px;
+        }
+
+        .stat-item:last-child { border-right: none; }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            background: var(--text);
+            transition: height 0.6s cubic-bezier(0.76, 0, 0.24, 1);
+            z-index: 0;
+        }
+
+        .stat-item:hover::before { height: 100%; }
+        .stat-item:hover .stat-num,
+        .stat-item:hover .stat-text,
+        .stat-item:hover .stat-joke { color: var(--bg); }
+
+        .stat-num {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 64px;
+            font-weight: 600;
+            line-height: 1;
+            color: var(--text);
+            position: relative;
+            z-index: 1;
+            transition: color 0.4s;
+        }
+
+        .stat-text {
+            font-family: 'Satoshi', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+            transition: color 0.4s;
+            font-weight: 500;
+        }
+
+        .stat-joke {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+            transition: color 0.4s;
+            opacity: 0.6;
+        }
+
+        /* ─── EXPERIENCE ─── */
+        .experience { padding: 180px 48px; }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 80px;
+        }
+
+        .section-header h2 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: clamp(48px, 7vw, 100px);
+            font-weight: 500;
+            letter-spacing: -3px;
+            line-height: 1;
+        }
+
+        .section-header .count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-bottom: 12px;
+        }
+
+        .exp-list { border-top: 1px solid var(--border); }
+
+        .exp-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 200px;
+            gap: 40px;
+            padding: 48px 0;
+            border-bottom: 1px solid var(--border);
+            align-items: start;
+            transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+            perspective: 1000px;
+        }
+
+        .exp-item:hover { padding-left: 20px; }
+
+        .exp-num {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 28px;
+            font-weight: 300;
+            color: var(--border);
+            transition: color 0.3s;
+        }
+
+        .exp-item:hover .exp-num { color: var(--text); }
+
+        .exp-content h3 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .exp-company {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .exp-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            object-fit: contain;
+            border: 1px solid var(--border);
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        .exp-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.9;
+            margin-top: 16px;
+            max-width: 520px;
+        }
+
+        .exp-meta {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .exp-meta .date { color: var(--text); font-weight: 500; }
+
+        /* ─── PROJECTS ─── */
+        .projects { padding: 180px 48px; }
+
+        .project-grid {
+            display: grid;
+            gap: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .project-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 60px;
+            padding: 56px 0;
+            border-bottom: 1px solid var(--border);
+            align-items: start;
+            transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+            perspective: 1000px;
+        }
+
+        .project-row:hover { padding-left: 20px; }
+
+        .project-name {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 44px;
+            font-weight: 500;
+            line-height: 1.05;
+            letter-spacing: -1px;
+        }
+
+        .project-info p {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.9;
+            max-width: 420px;
+            margin-top: 16px;
+        }
+
+        .project-tech-list {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .project-tech-list span {
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .project-link {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .project-link .arrow {
+            display: inline-block;
+            transition: transform 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .project-row:hover .project-link .arrow { transform: translateX(8px); }
+
+        /* ─── SKILLS ─── */
+        .skills { padding: 180px 48px; }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            margin-top: 80px;
+        }
+
+        .skill-block {
+            background: var(--bg);
+            padding: 48px;
+            position: relative;
+            overflow: hidden;
+            perspective: 800px;
+        }
+
+        .skill-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--text);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.6s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .skill-block:hover::before { transform: scaleX(1); }
+
+        .skill-block h3 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .skill-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .skill-bar-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .skill-bar-label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .skill-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .skill-bar-fill {
+            height: 100%;
+            background: var(--text);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .skill-block.revealed .skill-bar-fill {
+            width: var(--w);
+        }
+
+        .skill-block ul { list-style: none; }
+
+        .skill-block li {
+            font-size: 13px;
+            color: var(--muted);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(212,208,204,0.5);
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .skill-block li:hover { color: var(--text); padding-left: 16px; }
+
+        .skill-block li::before {
+            content: '→';
+            position: absolute;
+            left: -16px;
+            opacity: 0;
+            transition: all 0.3s;
+            color: var(--text);
+        }
+
+        .skill-block li:hover::before { opacity: 1; left: 0; }
+
+        /* ─── EDUCATION ─── */
+        .education {
+            padding: 180px 48px;
+            border-top: 1px solid var(--border);
+        }
+
+        .edu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 80px;
+        }
+
+        .edu-item {
+            padding: 48px;
+            border: 1px solid var(--border);
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+            perspective: 800px;
+        }
+
+        .edu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 0;
+            background: var(--text);
+            transition: height 0.6s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .edu-item:hover::before { height: 100%; }
+        .edu-item:hover { border-color: var(--text); }
+
+        .edu-icon {
+            font-size: 36px;
+            margin-bottom: 16px;
+        }
+
+        .edu-degree {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 26px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .edu-school {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .edu-details { font-size: 13px; color: var(--muted); line-height: 2; }
+
+        /* ─── CONTACT ─── */
+        .contact {
+            padding: 200px 48px;
+            text-align: center;
+        }
+
+        .contact h2 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: clamp(48px, 8vw, 140px);
+            font-weight: 500;
+            letter-spacing: -4px;
+            line-height: 0.9;
+            margin-bottom: 24px;
+        }
+
+        .contact h2 .serif {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .contact-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 48px;
+            letter-spacing: 1px;
+        }
+
+        .contact-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 48px;
+            border: 1.5px solid var(--text);
+            color: var(--text);
+            font-family: 'Satoshi', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+            border-radius: 100px;
+            background: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-cta::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--text);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+            z-index: -1;
+        }
+
+        .contact-cta:hover::before { transform: scaleX(1); transform-origin: left; }
+        .contact-cta:hover { color: var(--bg); }
+        .contact-cta:hover .arrow { transform: translateX(6px); }
+        .contact-cta .arrow { transition: transform 0.4s cubic-bezier(0.76, 0, 0.24, 1); }
+
+        .contact-socials {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 64px;
+        }
+
+        .contact-socials a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            transition: color 0.3s;
+            position: relative;
+            padding-bottom: 4px;
+        }
+
+        .contact-socials a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--text);
+            transition: width 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .contact-socials a:hover { color: var(--text); }
+        .contact-socials a:hover::after { width: 100%; }
+
+        /* ─── FOOTER ─── */
+        footer {
+            padding: 36px 48px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 1px;
+            width: 100%;
+        }
+
+        footer a { transition: color 0.3s; }
+        footer a:hover { color: var(--text); }
+
+        /* ─── FLOATING SHAPES ─── */
+        .shape {
+            position: fixed;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.03;
+        }
+
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            border: 1px solid var(--text);
+            border-radius: 50%;
+            top: 20%;
+            right: -100px;
+        }
+
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            border: 1px solid var(--text);
+            bottom: 10%;
+            left: -80px;
+            transform: rotate(45deg);
+        }
+
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            border: 1px solid var(--text);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            top: 50%;
+            left: 50%;
+        }
+
+        /* ─── SCALE REVEAL ─── */
+        .scale-reveal {
+            transform: scale(0.8);
+            opacity: 0;
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .scale-reveal.revealed {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* ─── SLIDE DIRECTIONS ─── */
+        .slide-left {
+            transform: translateX(-60px);
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-left.revealed {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .slide-right {
+            transform: translateX(60px);
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-right.revealed {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .slide-up {
+            transform: translateY(60px);
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-up.revealed {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ─── BLUR REVEAL ─── */
+        .blur-reveal {
+            filter: blur(10px);
+            opacity: 0;
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .blur-reveal.revealed {
+            filter: blur(0);
+            opacity: 1;
+        }
+
+        /* ─── MUSIC ─── */
+        .music {
+            padding: 120px 48px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .music-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+            margin-top: 60px;
+        }
+
+        .music-left h3 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 28px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .music-left p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.9;
+            margin-bottom: 24px;
+            max-width: 400px;
+        }
+
+        .music-left p strong { color: var(--text); font-weight: 500; }
+
+        .artist-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .artist-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .artist-item:hover {
+            border-color: var(--text);
+            transform: translateX(6px);
+        }
+
+        .artist-emoji {
+            font-size: 20px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(2,31,148,0.04);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .artist-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .artist-name {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .artist-genre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .spotify-embed-wrap {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: border-color 0.3s;
+        }
+
+        .spotify-embed-wrap:hover {
+            border-color: var(--text);
+        }
+
+        .spotify-embed-wrap iframe {
+            display: block;
+            width: 100%;
+        }
+
+        /* Now Playing Widget */
+        .now-playing {
+            margin-top: 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .now-playing:hover { border-color: #1DB954; }
+
+        .now-playing-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .now-playing-art {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--border);
+        }
+
+        .now-playing-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .now-playing-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #1DB954;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .now-playing-label .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #1DB954;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .now-playing-track {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .now-playing-artist {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .now-playing-progress {
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .now-playing-progress-fill {
+            height: 100%;
+            background: #1DB954;
+            border-radius: 2px;
+            transition: width 1s linear;
+        }
+
+        .now-playing-idle {
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .now-playing-idle .eq {
+            display: inline-flex;
+            gap: 2px;
+            vertical-align: middle;
+        }
+
+        .now-playing-idle .eq span {
+            display: inline-block;
+            width: 2px;
+            background: var(--border);
+            border-radius: 1px;
+        }
+
+        @keyframes eqBounce {
+            0% { transform: scaleY(0.4); }
+            100% { transform: scaleY(1); }
+        }
+
+        /* ─── PHOTOS (Instagram Embeds) ─── */
+        .photos {
+            padding: 120px 48px;
+            border-top: 1px solid var(--border);
+        }
+
+        .photos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 48px;
+        }
+
+        .photos-header h2 {
+            font-family: 'Clash Display', sans-serif;
+            font-size: clamp(36px, 5vw, 72px);
+            font-weight: 500;
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        .photos-header .photos-link {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-bottom: 8px;
+        }
+
+        .photos-link:hover { color: var(--text); }
+
+        .ig-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .ig-card {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: border-color 0.3s, transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+            background: #fff;
+        }
+
+        .ig-card:hover {
+            border-color: var(--text);
+            transform: translateY(-4px);
+        }
+
+        /* Instagram embed overrides to match our design */
+        .ig-card .instagram-media {
+            width: 100% !important;
+            border: none !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        @media (max-width: 1024px) {
+            .music-grid { grid-template-columns: 1fr; }
+            .ig-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .ig-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+            .music, .photos { padding-left: 20px; padding-right: 20px; }
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 1024px) {
+            .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+            .about { grid-template-columns: 1fr; gap: 40px; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .stat-item:nth-child(2) { border-right: none; }
+            .exp-item { grid-template-columns: 60px 1fr; }
+            .exp-meta { grid-column: 2; text-align: left; margin-top: 12px; }
+            .project-row { grid-template-columns: 1fr; gap: 16px; }
+            .skills-grid { grid-template-columns: 1fr; }
+            .side-progress { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .cursor { display: none; }
+            body { cursor: auto; }
+            a, button { cursor: pointer; }
+            nav { padding: 16px 20px; }
+            .nav-right { gap: 12px; }
+
+            .hero { padding: 0 20px 60px; }
+            .hero-left h1 { letter-spacing: -3px; }
+            .about, .experience, .projects, .skills, .education, .contact { padding-left: 20px; padding-right: 20px; }
+            .stats { grid-template-columns: 1fr; }
+            .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+            .stat-item:last-child { border-bottom: none; }
+            .edu-grid { grid-template-columns: 1fr; }
+            .contact-socials { flex-direction: column; gap: 20px; }
+            footer { flex-direction: column; gap: 12px; text-align: center; }
+        }
+
+        /* ════════════════════════════════════════════════
+           VIBE B — THE Z-AXIS JOURNEY
+           3D Scroll-Driven Animations  ·  Pure CSS
+        ════════════════════════════════════════════════ */
+
+        /* Hero photo hover depth */
+        .hero-photo-wrap {
+            will-change: transform;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hero-photo-wrap:hover {
+            transform: scale(1.03);
+        }
+
+        /*
+           Only the hero tunnel uses CSS scroll-driven animations.
+           All other reveals are handled by JS IntersectionObserver
+           to avoid conflicts with existing CSS transitions.
+        */
+        @supports (animation-timeline: scroll()) {
+            @keyframes heroTunnel {
+                0%   { transform: scale(1);    opacity: 1; filter: blur(0px); }
+                100% { transform: scale(0.7);  opacity: 0; filter: blur(12px); }
+            }
+            .hero {
+                animation: heroTunnel linear forwards;
+                animation-timeline: scroll(root);
+                animation-range: 0vh 90vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor" id="cursor"></div>
+    <div class="grain"></div>
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Floating shapes -->
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+
+    <!-- Side progress dots -->
+    <div class="side-progress" id="sideProgress">
+        <div class="side-dot active" data-section="hero"></div>
+        <div class="side-dot" data-section="about"></div>
+        <div class="side-dot" data-section="work"></div>
+        <div class="side-dot" data-section="projects"></div>
+        <div class="side-dot" data-section="skills"></div>
+        <div class="side-dot" data-section="contact"></div>
+    </div>
+
+    <!-- LOADER -->
+    <div class="loader" id="loader">
+        <div class="loader-text" id="loaderText"></div>
+        <div class="loader-sub">vibes loading... (powered by Claude)</div>
+        <div class="loader-progress-wrap">
+            <div class="loader-bar-track"><div class="loader-bar-fill" id="loaderBar"></div></div>
+            <div class="loader-counter" id="loaderCounter">0%</div>
+        </div>
+    </div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-name">MADHAV TIWARI</div>
+        <div class="nav-right">
+            <div class="nav-links">
+                <a href="#about" data-hover>About</a>
+                <a href="#work" data-hover>Work</a>
+                <a href="#projects" data-hover>Projects</a>
+                <a href="#contact" data-hover>Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="hero" data-section>
+        <div class="hero-grid">
+            <div class="hero-left">
+                <div class="hero-location">
+                    <span class="hero-location-dot"></span>
+                    <span>Dehradun, India</span>
+                    <span class="hero-location-sep">|</span>
+                    <span id="heroTime"></span>
+                </div>
+                <h1>
+                    <span class="line"><span>Madhav</span></span>
+                    <span class="line"><span>Tiwari</span></span>
+                </h1>
+                <div class="hero-subtitle" id="typewriter"></div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--border);margin-top:12px;letter-spacing:1px;">hint: i'm powered by Claude and coffee</div>
+            </div>
+            <div class="hero-right">
+                <div class="hero-photo-wrap">
+                    <img src="PHOTO-2026-07-10-23-27-37.jpg" alt="Madhav Tiwari in nature" class="hero-photo" loading="lazy">
+                    <div class="hero-photo-overlay"></div>
+                    <div class="hero-avatar-float">
+                        <img src="https://github.com/codemaddy17.png" alt="Madhav Tiwari" loading="lazy">
+                    </div>
+                    <div class="hero-photo-badge">CS @ UPES</div>
+                </div>
+                <p class="hero-desc">I turn <strong>coffee into code</strong> and code into bugs. Currently a <strong>Google Student Ambassador</strong> at UPES Dehradun, which is a fancy way of saying I beg students to use Google products.</p>
+                <div class="hero-tags">
+                    <span data-hover>React.js</span>
+                    <span data-hover>JavaScript</span>
+                    <span data-hover>Java</span>
+                    <span data-hover>Swift</span>
+                    <span data-hover>Node.js</span>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-line"></div>
+            SCROLL (if you dare)
+        </div>
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee-section">
+        <div class="marquee">
+            <span><em>React.js</em> ·</span>
+            <span><em>JavaScript</em> ·</span>
+            <span><em>Java</em> ·</span>
+            <span><em>Swift</em> ·</span>
+            <span><em>Stack Overflow</em> ·</span>
+            <span><em>Google</em> ·</span>
+            <span><em>Coffee</em> ·</span>
+            <span><em>Imposter Syndrome</em> ·</span>
+            <span><em>Claude</em> ·</span>
+            <span><em>React.js</em> ·</span>
+            <span><em>JavaScript</em> ·</span>
+            <span><em>Java</em> ·</span>
+            <span><em>Swift</em> ·</span>
+            <span><em>Stack Overflow</em> ·</span>
+            <span><em>Google</em> ·</span>
+            <span><em>Coffee</em> ·</span>
+            <span><em>Imposter Syndrome</em> ·</span>
+            <span><em>Claude</em> ·</span>
+            <span><em>React.js</em> ·</span>
+            <span><em>JavaScript</em> ·</span>
+        </div>
+    </div>
+
+    <!-- ABOUT -->
+    <section class="about" id="about" data-section>
+        <div>
+            <div class="section-label slide-left">01 — Who am I?</div>
+            <h2 class="blur-reveal">I write code<br>that <span class="serif">sometimes</span><br>works.</h2>
+            <div class="about-code-block slide-up" style="transition-delay:0.3s">
+                <div class="code-header">
+                    <span class="code-dot red"></span>
+                    <span class="code-dot yellow"></span>
+                    <span class="code-dot green"></span>
+                    <span class="code-filename">madhav.js</span>
+                </div>
+                <pre class="code-body"><code><span class="code-kw">const</span> <span class="code-var">madhav</span> = {
+  <span class="code-key">role</span>: <span class="code-str">"Fullstack Dev"</span>,
+  <span class="code-key">fuel</span>: <span class="code-str">"Coffee + Claude"</span>,
+  <span class="code-key">skills</span>: [<span class="code-str">"React"</span>, <span class="code-str">"Java"</span>, <span class="code-str">"Swift"</span>],
+  <span class="code-key">superpower</span>: () => <span class="code-str">"Debugging at 3AM"</span>
+};</code></pre>
+            </div>
+        </div>
+        <div class="about-right">
+            <p class="slide-right">B.Tech CS student at <strong>UPES Dehradun</strong> who specialises in turning Stack Overflow answers into \"my own code.\" I build <strong>React.js</strong> apps that mostly don't crash in production. Also, I have a very close professional relationship with <strong>Claude</strong> — we debug together at 3 AM.</p>
+            <p class="slide-right" style="transition-delay:0.1s">When I'm not debugging for 3 hours only to find a missing semicolon, I'm leading teams and reaching <strong>500+ beneficiaries</strong> — which sounds impressive until you realize half of them were just my mom refreshing the page.</p>
+            <div class="about-fun slide-up" style="transition-delay:0.2s">\"I didn't choose the dev life, the dev life chose me. Also, I couldn't afford a different career.\"</div>
+        </div>
+    </section>
+
+    <!-- HORIZONTAL SCROLL -->
+    <div class="horizontal-section">
+        <div class="horizontal-wrapper">
+            <div class="horizontal-card">
+                <h3>Coffee Dependency</h3>
+                <p>Cannot function without at least 3 cups. Currently seeking rehab but too busy coding.</p>
+                <span class="tag">Critical</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>🐛 Bug Production</h3>
+                <p>I produce more bugs than features. It's a talent, really. Some might call it art.</p>
+                <span class="tag">Expert</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>😴 Sleep Deficit</h3>
+                <p>Sleep is for people who don't have deadlines. I have deadlines. So many deadlines.</p>
+                <span class="tag">Chronic</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>Stack Overflow</h3>
+                <p>Professional copy-paster. I don't steal code, I \"adopt\" it with slight modifications.</p>
+                <span class="tag">Elite</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>Phone Addiction</h3>
+                <p>It's not addiction, it's \"testing responsive design on real devices.\" Sure, Madhav.</p>
+                <span class="tag">Severe</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>Rap & Hiphop</h3>
+                <p>Cannot code without rap beats. My Spotify wrapped is just rap and hiphop on repeat.</p>
+                <span class="tag">Essential</span>
+            </div>
+            <!-- Duplicate for seamless loop -->
+            <div class="horizontal-card">
+                <h3>Coffee Dependency</h3>
+                <p>Cannot function without at least 3 cups. Currently seeking rehab but too busy coding.</p>
+                <span class="tag">Critical</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>🐛 Bug Production</h3>
+                <p>I produce more bugs than features. It's a talent, really. Some might call it art.</p>
+                <span class="tag">Expert</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>😴 Sleep Deficit</h3>
+                <p>Sleep is for people who don't have deadlines. I have deadlines. So many deadlines.</p>
+                <span class="tag">Chronic</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>Stack Overflow</h3>
+                <p>Professional copy-paster. I don't steal code, I \"adopt\" it with slight modifications.</p>
+                <span class="tag">Elite</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>Phone Addiction</h3>
+                <p>It's not addiction, it's \"testing responsive design on real devices.\" Sure, Madhav.</p>
+                <span class="tag">Severe</span>
+            </div>
+            <div class="horizontal-card">
+                <h3>Rap & Hiphop</h3>
+                <p>Cannot code without rap beats. My Spotify wrapped is just rap and hiphop on repeat.</p>
+                <span class="tag">Essential</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats" id="stats" data-section>
+        <div class="stat-item scale-reveal" data-hover>
+            <div class="stat-num" data-count="500">0</div>
+            <div class="stat-text">People Reached</div>
+            <div class="stat-joke">(3 of them were impressed)</div>
+        </div>
+        <div class="stat-item scale-reveal" style="transition-delay:0.1s" data-hover>
+            <div class="stat-num" data-count="6">0</div>
+            <div class="stat-text">Team Members Led</div>
+            <div class="stat-joke">(they had no choice)</div>
+        </div>
+        <div class="stat-item scale-reveal" style="transition-delay:0.2s" data-hover>
+            <div class="stat-num" data-count="12">0</div>
+            <div class="stat-text">Reusable Components</div>
+            <div class="stat-joke">(some even work)</div>
+        </div>
+        <div class="stat-item scale-reveal" style="transition-delay:0.3s" data-hover>
+            <div class="stat-num" data-count="999">0</div>
+            <div class="stat-text">Cups of Coffee</div>
+            <div class="stat-joke">(the real MVP)</div>
+        </div>
+    </div>
+
+    <!-- EXPERIENCE -->
+    <section class="experience" id="work" data-section>
+        <div class="section-label slide-left">02 — Where I Pretend to Work</div>
+        <div class="section-header">
+            <h2>Work<br>Experience</h2>
+            <div class="count">03 Roles (yes, really)</div>
+        </div>
+        <div class="exp-list">
+            <div class="exp-item slide-right" data-hover>
+                <div class="exp-num">01</div>
+                <div class="exp-content">
+                    <h3>Google Student Ambassador</h3>
+                    <div class="exp-company"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="exp-logo"> Google (the search engine)</div>
+                    <p class="exp-desc">I tell students to use Google products. They already do. My job is basically to make it official. Also, I get a cool badge and free stickers — which is basically the developer equivalent of a gold star. Claude helped me write the application essay.</p>
+                </div>
+                <div class="exp-meta">
+                    <div class="date">Jul 2026 — Present</div>
+                    <div>India (vibes only)</div>
+                </div>
+            </div>
+            <div class="exp-item slide-right" style="transition-delay:0.1s" data-hover>
+                <div class="exp-num">02</div>
+                <div class="exp-content">
+                    <h3>Research Intern</h3>
+                    <div class="exp-company"><img src="https://www.annsetu.in/icon-512.png" alt="Annsetu" class="exp-logo"> Annsetu (sounds cool, right?)</div>
+                    <p class="exp-desc">I researched stuff for an agri-tech startup. Mostly told them which tech stack to use. They didn't listen. They built it in PHP. Claude and I cry sometimes.</p>
+                </div>
+                <div class="exp-meta">
+                    <div class="date">Jun 2026 — Aug 2026</div>
+                    <div>Remote (from my bed)</div>
+                </div>
+            </div>
+            <div class="exp-item slide-right" style="transition-delay:0.2s" data-hover>
+                <div class="exp-num">03</div>
+                <div class="exp-content">
+                    <h3>Student Intern</h3>
+                    <div class="exp-company"><img src="https://in.childhelpfoundation.in/assets/img/childhelpfoundation.jpg" alt="Child Help Foundation" class="exp-logo"> Child Help Foundation (wholesome)</div>
+                    <p class="exp-desc">Led 8 interns across 5 NGO centres. Reached 500+ people in 2 months. Finished 1 week early. Basically, I'm the reason we can't have nice things — because I finished them too fast.</p>
+                </div>
+                <div class="exp-meta">
+                    <div class="date">Jun 2025 — Jul 2025</div>
+                    <div>Pune & Mumbai (chaaai)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section class="projects" id="projects" data-section>
+        <div class="section-label slide-left">03 — Things I Built</div>
+        <div class="section-header">
+            <h2>My<br>Projects</h2>
+            <div class="count">03 (that survived)</div>
+        </div>
+        <div class="project-grid">
+            <a href="https://github.com/aashna-boop/RAG-Goa-AfterHours" target="_blank" class="project-row slide-up" data-hover>
+                <div class="project-name">RAG Goa<br>AfterHours</div>
+                <div class="project-info">
+                    <p>A voice-based RAG system for Indic languages that retrieves real passages from ai4bharat/MSMARCO-XI before answering. Built at HackerHouse Goa 2026. It would rather shrug at you than lie — we call that a feature.</p>
+                    <div class="project-tech-list">
+                        <span>Python</span>
+                        <span>FAISS</span>
+                        <span>FastAPI</span>
+                        <span>React</span>
+                    </div>
+                </div>
+                <div class="project-link">GitHub <span class="arrow">→</span></div>
+            </a>
+            <a href="https://github.com/codemaddy17/inventory-management-system" target="_blank" class="project-row slide-up" style="transition-delay:0.15s" data-hover>
+                <div class="project-name">Inventory<br>System</div>
+                <div class="project-info">
+                    <p>Desktop app that manages inventory. Sounds boring until you realize it has 6 MySQL tables, 500+ records, and JUnit tests that actually pass. Claude wrote half the OOP. I'm as surprised as you are.</p>
+                    <div class="project-tech-list">
+                        <span>Java</span>
+                        <span>Swing</span>
+                        <span>MySQL</span>
+                        <span>JUnit</span>
+                    </div>
+                </div>
+                <div class="project-link">GitHub <span class="arrow">→</span></div>
+            </a>
+            <a href="https://github.com/codemaddy17/Vidyut" target="_blank" class="project-row slide-up" style="transition-delay:0.3s" data-hover>
+                <div class="project-name">Vidyut</div>
+                <div class="project-info">
+                    <p>AI-native grid intelligence platform for India's renewable energy transition. Predicts renewable curtailment 30–90 min in advance using temporal Graph Neural Networks, and localises theft/faults across Distribution grids. Co-founded with Aashna Suman — I built the product engineering and design.</p>
+                    <div class="project-tech-list">
+                        <span>React</span>
+                        <span>Python</span>
+                        <span>GNN</span>
+                        <span>FastAPI</span>
+                    </div>
+                </div>
+                <div class="project-link">GitHub <span class="arrow">→</span></div>
+            </a>
+        </div>
+    </section>
+
+    <!-- MUSIC -->
+    <section class="music" data-section>
+        <div class="section-label slide-left">03.5 — What's in My Ears</div>
+        <div class="music-grid">
+            <div class="music-left">
+                <h3>Currently Playing</h3>
+                <p>I can't code without music. <strong>Rap and hip-hop</strong> on loop — my Spotify Wrapped is just the same 50 songs on repeat. My IDE has a permanent tab open to Spotify.</p>
+                <div class="now-playing" id="nowPlaying">
+                    <div class="now-playing-idle">
+                        <span class="eq"><span></span><span></span><span></span></span>
+                        loading spotify...
+                    </div>
+                </div>
+                <div class="artist-list" style="margin-top: 24px;">
+                    <div class="artist-item">
+                        <div class="artist-emoji">🎤</div>
+                        <div class="artist-info">
+                            <span class="artist-name">Kendrick Lamar</span>
+                            <span class="artist-genre">Hip-Hop</span>
+                        </div>
+                    </div>
+                    <div class="artist-item">
+                        <div class="artist-emoji">🔥</div>
+                        <div class="artist-info">
+                            <span class="artist-name">J. Cole</span>
+                            <span class="artist-genre">Hip-Hop</span>
+                        </div>
+                    </div>
+                    <div class="artist-item">
+                        <div class="artist-emoji">🎵</div>
+                        <div class="artist-info">
+                            <span class="artist-name">Travis Scott</span>
+                            <span class="artist-genre">Rap / Trap</span>
+                        </div>
+                    </div>
+                    <div class="artist-item">
+                        <div class="artist-emoji">🎧</div>
+                        <div class="artist-info">
+                            <span class="artist-name">Seedhe Maut</span>
+                            <span class="artist-genre">Desi Hip-Hop</span>
+                        </div>
+                    </div>
+                    <div class="artist-item">
+                        <div class="artist-emoji">🎶</div>
+                        <div class="artist-info">
+                            <span class="artist-name">Divine</span>
+                            <span class="artist-genre">Mumbai Rap</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="music-right">
+                <div class="spotify-embed-wrap">
+                    <!-- Replace the playlist URL below with your own Spotify playlist -->
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                </div>
+                <div style="margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--border); letter-spacing: 1px;">
+                    ↑ RapCaviar — my default coding soundtrack. <a href="https://open.spotify.com/user/madhavtiwari17" target="blank" style="color: var(--muted); border-bottom: 1px dashed var(--border);">see my profile →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PHOTOS -->
+    <section class="photos" data-section>
+        <div class="photos-header">
+            <div>
+                <div class="section-label slide-left" style="margin-bottom: 16px;">03.75 — From My Feed</div>
+                <h2 class="blur-reveal">Things I<br><span class="serif">photograph</span></h2>
+            </div>
+            <a href="https://instagram.com/maddywithalens" target="_blank" class="photos-link" data-hover>@maddywithalens →</a>
+        </div>
+        <div class="ig-grid">
+            <div class="ig-card slide-up">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DWq_ycKj8yY/" data-instgrm-version="14" style=" margin: 0; max-width:100%; min-width:0; width:calc(100% - 2px);"><div style="padding:16px;"></div></blockquote>
+            </div>
+            <div class="ig-card slide-up" style="transition-delay:0.1s">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DRzLviCD7i2/" data-instgrm-version="14" style=" margin: 0; max-width:100%; min-width:0; width:calc(100% - 2px);"><div style="padding:16px;"></div></blockquote>
+            </div>
+            <div class="ig-card slide-up" style="transition-delay:0.2s">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DRoqOpzj_J1/" data-instgrm-version="14" style=" margin: 0; max-width:100%; min-width:0; width:calc(100% - 2px);"><div style="padding:16px;"></div></blockquote>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:40px;">
+            <a href="https://instagram.com/maddywithalens" target="_blank" class="contact-cta" style="font-size:12px; padding:14px 32px;">See more on Instagram →</a>
+        </div>
+    </section>
+
+    <script async src="//www.instagram.com/embed.js"></script>
+
+    <!-- SKILLS -->
+    <section class="skills" id="skills" data-section>
+        <div class="section-label slide-left">04 — My Toolkit (aka How I Fool People Into Thinking I Know Things)</div>
+        <div class="section-header">
+            <h2>Skills &<br>Vibes</h2>
+        </div>
+        <div class="skills-grid">
+            <div class="skill-block slide-up" data-hover>
+                <h3>Languages</h3>
+                <div class="skill-bars">
+                    <div class="skill-bar-item"><span class="skill-bar-label">JavaScript</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:90%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">Java</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:75%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">Python</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:60%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">Swift</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:55%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">Claude</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:95%"></div></div></div>
+                </div>
+            </div>
+            <div class="skill-block slide-up" style="transition-delay:0.08s" data-hover>
+                <h3>Frontend</h3>
+                <div class="skill-bars">
+                    <div class="skill-bar-item"><span class="skill-bar-label">React.js</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:85%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">HTML5/CSS3</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:90%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">SwiftUI</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:50%"></div></div></div>
+                    <div class="skill-bar-item"><span class="skill-bar-label">Responsive</span><div class="skill-bar"><div class="skill-bar-fill" style="--w:80%"></div></div></div>
+                </div>
+            </div>
+            <div class="skill-block slide-up" style="transition-delay:0.16s" data-hover>
+                <h3>Backend & DB</h3>
+                <ul>
+                    <li>Node.js (JavaScript but make it server)</li>
+                    <li>REST APIs (I talk to servers)</li>
+                    <li>MySQL (tables go brrr)</li>
+                    <li>JDBC (Java's database bestie)</li>
+                    <li>OOP (objects have feelings too)</li>
+                </ul>
+            </div>
+            <div class="skill-block slide-up" style="transition-delay:0.24s" data-hover>
+                <h3>Tools</h3>
+                <ul>
+                    <li>Git / GitHub (version control & vibes)</li>
+                    <li>npm (I have 47 dependencies)</li>
+                    <li>Claude (90% of my code is Claude-reviewed)</li>
+                    <li>VS Code (with 20 extensions)</li>
+                    <li>Stack Overflow (Claude's ancestor)</li>
+                </ul>
+            </div>
+            <div class="skill-block slide-up" style="transition-delay:0.32s" data-hover>
+                <h3>Concepts</h3>
+                <ul>
+                    <li>DSA (I solve puzzles for fun)</li>
+                    <li>OOP (encapsulation is my personality)</li>
+                    <li>UI/UX (I make things clickable)</li>
+                    <li>JUnit (proving my code works)</li>
+                    <li>Agile (standup meetings ftw)</li>
+                </ul>
+            </div>
+            <div class="skill-block slide-up" style="transition-delay:0.4s" data-hover>
+                <h3>Currently Learning</h3>
+                <ul>
+                    <li>AI/ML (so I can finally replace Claude)</li>
+                    <li>iOS Development (for the aesthetics)</li>
+                    <li>Open Source (free code, free pain)</li>
+                    <li>How to sleep (unlearned skill)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- EDUCATION -->
+    <section class="education" data-section>
+        <div class="section-label slide-left">05 — Where I Learned to Suffer</div>
+        <div class="section-header">
+            <h2>Education</h2>
+        </div>
+        <div class="edu-grid">
+            <div class="edu-item scale-reveal" data-hover>
+                <div class="edu-icon"></div>
+                <div class="edu-degree">B.Tech, Computer Science</div>
+                <div class="edu-school">UPES Dehradun (not the IIT, relax)</div>
+                <div class="edu-details">
+                    2024 — 2028<br>
+                    Specialisation: Fullstack Development<br>
+                    CGPA: 7.0/10 (we don't talk about it)
+                </div>
+            </div>
+            <div class="edu-item scale-reveal" style="transition-delay:0.15s" data-hover>
+                <div class="edu-icon">🏫</div>
+                <div class="edu-degree">High School (PCM + CS)</div>
+                <div class="edu-school">Laureate Public School, Shimla</div>
+                <div class="edu-details">
+                    2020 — 2024<br>
+                    Survival rate: 100% (barely)
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact" id="contact" data-section>
+        <div class="section-label blur-reveal" style="justify-content: center;">06 — Let's Be Friends (or at least LinkedIn connections)</div>
+        <h2 class="scale-reveal">Let's<br><span class="serif">build</span><br>together.</h2>
+        <p class="contact-sub slide-up">I promise I'll only spam you with memes about JavaScript. (Or ask Claude to draft the email for me.)</p>
+        <a href="mailto:madhavtiwari.college@gmail.com" class="contact-cta slide-up" style="transition-delay:0.1s" data-hover>
+            Say hello <span class="arrow">→</span>
+        </a>
+        <div class="contact-socials slide-up" style="transition-delay:0.2s">
+            <a href="https://github.com/codemaddy17" target="_blank" data-hover>GitHub (where I commit crimes)</a>
+            <a href="https://www.linkedin.com/in/madhavtiwari17/" target="_blank" data-hover>LinkedIn (professional lies)</a>
+            <a href="https://instagram.com/maddywithlens" target="_blank" data-hover>Instagram (@maddywithlens)</a>
+            <a href="mailto:madhavtiwari.college@gmail.com" data-hover>Email (old school)</a>
+            <a href="#" data-hover onclick="alert('Claude says: Just email him directly. I\'m tired.'); return false;">Claude (AI consultant)</a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div>© 2026 Madhav Tiwari (all bugs are features)</div>
+        <div>Built with <a href="https://github.com/codemaddy17" target="_blank" data-hover>code</a>, <a href="mailto:madhavtiwari.college@gmail.com" data-hover>coffee</a>, <a href="#" data-hover onclick="alert('Claude: I helped with most of this, honestly.'); return false;">Claude</a>, and questionable life choices</div>
+    </footer>
+
+    <script>
+        // ─── CURSOR ───
+        const cursor = document.getElementById('cursor');
+        let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', e => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        (function animate() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animate);
+        })();
+
+        document.querySelectorAll('[data-hover], a, button, .project-row, .stat-item, .skill-block, .edu-item, .horizontal-card').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+        });
+
+        document.addEventListener('mousedown', () => cursor.classList.add('click'));
+        document.addEventListener('mouseup', () => cursor.classList.remove('click'));
+
+        // ─── SCROLL PROGRESS BAR ───
+        const scrollProgressBar = document.getElementById('scrollProgress');
+        window.addEventListener('scroll', () => {
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const pct = maxScroll > 0 ? (window.scrollY / maxScroll) * 100 : 0;
+            scrollProgressBar.style.width = pct + '%';
+        });
+
+        // ─── CLOCK ───
+        const heroTimeEl = document.getElementById('heroTime');
+        function updateClock() {
+            const now = new Date();
+            const time = [now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+            if (heroTimeEl) heroTimeEl.textContent = time;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ─── LOADER ───
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loaderText');
+        const loaderBar = document.getElementById('loaderBar');
+        const loaderCounter = document.getElementById('loaderCounter');
+        const phrases = ['loading...', 'almost there...', 'still loading...', 'why are you waiting?', 'fine, done.'];
+        const totalPhrases = phrases.length;
+        let phraseIndex = 0;
+        let currentPercent = 0;
+        let counterInterval = null;
+
+        function animateCounter(target) {
+            if (counterInterval) clearInterval(counterInterval);
+            const step = Math.max(1, Math.ceil((target - currentPercent) / 12));
+            counterInterval = setInterval(() => {
+                currentPercent += step;
+                if (currentPercent >= target) {
+                    currentPercent = target;
+                    clearInterval(counterInterval);
+                    counterInterval = null;
+                }
+                loaderCounter.textContent = currentPercent + '%';
+            }, 25);
+        }
+
+        function typePhrase() {
+            if (phraseIndex >= totalPhrases) {
+                loaderBar.style.width = '100%';
+                animateCounter(100);
+                setTimeout(() => {
+                    loader.classList.add('done');
+                    document.body.style.overflow = 'auto';
+                }, 500);
+                return;
+            }
+            loaderText.innerHTML = '';
+            const phrase = phrases[phraseIndex];
+            [...phrase].forEach((char, i) => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.style.animationDelay = `${i * 0.03}s`;
+                loaderText.appendChild(span);
+            });
+            const target = Math.round(((phraseIndex + 1) / totalPhrases) * 100);
+            loaderBar.style.width = target + '%';
+            animateCounter(target);
+            phraseIndex++;
+            setTimeout(typePhrase, 500);
+        }
+
+        document.body.style.overflow = 'hidden';
+        typePhrase();
+
+    
+        // ─── TYPEWRITER ───
+        const typewriterEl = document.getElementById('typewriter');
+        const typewriterTexts = [
+            'professional bug creator, Claudes favorite human',
+            'professional coffee-to-code converter',
+            'professional imposter syndrome haver',
+            'professional semicolon hunter'
+        ];
+        let currentText = 0;
+        let currentChar = 0;
+        let isDeleting = false;
+        let typewriterStarted = false;
+
+        function typewrite() {
+            if (!typewriterStarted) return;
+            const text = typewriterTexts[currentText];
+            if (!isDeleting) {
+                typewriterEl.textContent = text.substring(0, currentChar + 1);
+                currentChar++;
+                if (currentChar === text.length) {
+                    setTimeout(() => { isDeleting = true; typewrite(); }, 2000);
+                    return;
+                }
+                setTimeout(typewrite, 50);
+            } else {
+                typewriterEl.textContent = text.substring(0, currentChar - 1);
+                currentChar--;
+                if (currentChar === 0) {
+                    isDeleting = false;
+                    currentText = (currentText + 1) % typewriterTexts.length;
+                    setTimeout(typewrite, 500);
+                    return;
+                }
+                setTimeout(typewrite, 30);
+            }
+        }
+
+        setTimeout(() => { typewriterStarted = true; typewrite(); }, 2500);
+
+        // ─── SCROLL-BASED REVEAL ANIMATIONS ───
+        const revealObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.slide-left, .slide-right, .slide-up, .blur-reveal, .scale-reveal, .section-label, .skill-block').forEach(el => {
+            revealObserver.observe(el);
+        });
+
+        // ─── COUNTER ANIMATION ───
+        const counterObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const target = parseInt(el.dataset.count);
+                    let current = 0;
+                    const increment = target / 50;
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= target) {
+                            current = target;
+                            clearInterval(timer);
+                        }
+                        el.textContent = Math.floor(current) + '+';
+                    }, 30);
+                    counterObserver.unobserve(el);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
+
+        // ─── SCROLL-BASED PARALLAX ───
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+
+            // Floating shapes parallax
+            document.querySelectorAll('.shape').forEach((shape, i) => {
+                const speed = 0.05 + i * 0.03;
+                const y = scrolled * speed;
+                const rotate = scrolled * 0.02 * (i + 1);
+                shape.style.transform = `translateY(${y}px) rotate(${rotate}deg)`;
+            });
+        });
+
+        // ─── 3D TILT ───
+        document.querySelectorAll('.stat-item, .skill-block, .edu-item, .horizontal-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                card.style.transform = `perspective(800px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateY(-5px)`;
+                card.style.transition = 'none';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+                card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+            });
+        });
+
+        // ─── SIDE PROGRESS DOTS ───
+        const sections = document.querySelectorAll('[data-section]');
+        const sideDots = document.querySelectorAll('.side-dot');
+
+        function updateSideProgress() {
+            let current = 0;
+            const scrollTop = window.scrollY;
+            const vh = window.innerHeight;
+            sections.forEach((section, i) => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= vh * 0.5) current = i;
+            });
+            sideDots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === current);
+            });
+        }
+
+        window.addEventListener('scroll', updateSideProgress);
+        updateSideProgress();
+
+        // Click side dots to scroll to section
+        sideDots.forEach((dot, i) => {
+            dot.addEventListener('click', () => {
+                if (sections[i]) sections[i].scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // ─── TEXT SCRAMBLE ───
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*';
+        document.querySelectorAll('.project-name, .edu-degree, .horizontal-card h3').forEach(el => {
+            const orig = el.textContent;
+            let scrambleInterval = null;
+            el.addEventListener('mouseenter', () => {
+                if (scrambleInterval) clearInterval(scrambleInterval);
+                let i = 0;
+                scrambleInterval = setInterval(() => {
+                    el.textContent = orig.split('').map((c, idx) => {
+                        if (idx < i) return orig[idx];
+                        if (c === '\n') return '\n';
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join('');
+                    i += 0.5;
+                    if (i >= orig.length) { clearInterval(scrambleInterval); scrambleInterval = null; }
+                }, 30);
+            });
+        });
+
+        // ─── MAGNETIC CTA ───
+        const cta = document.querySelector('.contact-cta');
+        if (cta) {
+            cta.addEventListener('mousemove', e => {
+                const r = cta.getBoundingClientRect();
+                cta.style.transform = `translate(${(e.clientX - r.left - r.width/2) * 0.15}px, ${(e.clientY - r.top - r.height/2) * 0.15}px)`;
+            });
+            cta.addEventListener('mouseleave', () => { cta.style.transform = ''; cta.style.transition = 'transform 0.4s cubic-bezier(0.76,0,0.24,1)'; });
+            cta.addEventListener('mouseenter', () => { cta.style.transition = 'none'; });
+        }
+
+        // ─── NAV HIDE ON SCROLL ───
+        let lastScrollY = 0;
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            nav.style.transition = 'transform 0.4s cubic-bezier(0.76, 0, 0.24, 1)';
+            nav.style.transform = window.scrollY > lastScrollY && window.scrollY > 100 ? 'translateY(-100%)' : 'translateY(0)';
+            lastScrollY = window.scrollY;
+        });
+
+        // ─── NOW PLAYING (Spotify) ───
+        const nowPlayingEl = document.getElementById('nowPlaying');
+        let spotifyInterval = null;
+
+        async function fetchNowPlaying() {
+            try {
+                const res = await fetch('/api/spotify');
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+
+                if (data.error || !data.track) {
+                    nowPlayingEl.innerHTML = `
+                        <div class="now-playing-idle">
+                            <span class="eq"><span style="height:8px"></span><span style="height:12px"></span><span style="height:6px"></span></span>
+                            not playing right now
+                        </div>`;
+                    return;
+                }
+
+                const t = data.track;
+                const progressPct = t.duration_ms > 0 ? (t.progress_ms / t.duration_ms) * 100 : 0;
+                const statusLabel = data.is_playing ? 'now playing' : 'last played';
+                const pulseDot = data.is_playing ? '<span class="live-dot"></span>' : '';
+
+                nowPlayingEl.innerHTML = `
+                    <div class="now-playing-inner">
+                        <img class="now-playing-art" src="${t.album_art}" alt="${t.album}" loading="lazy">
+                        <div class="now-playing-info">
+                            <div class="now-playing-label">${pulseDot} ${statusLabel}</div>
+                            <a href="${t.url}" target="_blank" style="color:inherit;text-decoration:none;">
+                                <div class="now-playing-track">${t.name}</div>
+                            </a>
+                            <div class="now-playing-artist">${t.artist}</div>
+                            ${data.is_playing ? `<div class="now-playing-progress"><div class="now-playing-progress-fill" style="width:${progressPct}%"></div></div>` : ''}
+                        </div>
+                    </div>`;
+            } catch (err) {
+                // API not deployed yet or error — show fallback
+                nowPlayingEl.innerHTML = `
+                    <div class="now-playing-idle">
+                        <span class="eq"><span style="height:8px"></span><span style="height:12px"></span><span style="height:6px"></span></span>
+                        spotify integration pending
+                    </div>`;
+            }
+        }
+
+        // Fetch immediately, then every 30 seconds
+        fetchNowPlaying();
+        spotifyInterval = setInterval(fetchNowPlaying, 30000);
+
+        // ─── KONAMI CODE ───
+        let konamiCode = [];
+        const konamiSequence = [38,38,40,40,37,39,37,39,66,65];
+        document.addEventListener('keydown', e => {
+            konamiCode.push(e.keyCode);
+            if (konamiCode.length > 10) konamiCode.shift();
+            if (JSON.stringify(konamiCode) === JSON.stringify(konamiSequence)) {
+                document.body.style.transition = 'transform 1s';
+                document.body.style.transform = 'rotate(360deg)';
+                setTimeout(() => { document.body.style.transform = ''; }, 1000);
+                konamiCode = [];
+            }
+        });
+    </script>
+</body>
+</html>
