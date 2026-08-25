@@ -1,8 +1,6 @@
-# [maddymadhav.in](https://maddymadhav.in)
+# Madhav Tiwari — Portfolio
 
 My personal portfolio. Single-page, no frameworks, no build step — just HTML, CSS, and vanilla JS.
-
-**Live:** [maddymadhav.in](https://maddymadhav.in) (DNS propagating) | [portfolio-exp-mocha.vercel.app](https://portfolio-exp-mocha.vercel.app)
 
 ## What's on it
 
