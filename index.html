@@ -1313,8 +1313,7 @@
 
         .music-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
+            grid-template-columns: minmax(0, 760px);
             align-items: start;
             margin-top: 60px;
         }
@@ -1336,78 +1335,9 @@
 
         .music-left p strong { color: var(--text); font-weight: 500; }
 
-        .artist-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .artist-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 16px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.76, 0, 0.24, 1);
-        }
-
-        .artist-item:hover {
-            border-color: var(--text);
-            transform: translateX(6px);
-        }
-
-        .artist-emoji {
-            font-size: 20px;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(2,31,148,0.04);
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-
-        .artist-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .artist-name {
-            font-family: 'Clash Display', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .artist-genre {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: var(--muted);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-top: 2px;
-        }
-
-        .spotify-embed-wrap {
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            transition: border-color 0.3s;
-        }
-
-        .spotify-embed-wrap:hover {
-            border-color: var(--text);
-        }
-
-        .spotify-embed-wrap iframe {
-            display: block;
-            width: 100%;
-        }
-
         /* Now Playing Widget */
         .now-playing {
-            margin-top: 20px;
+            margin-top: 28px;
             border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
@@ -1419,14 +1349,14 @@
         .now-playing-inner {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 16px;
+            gap: 24px;
+            padding: 24px;
         }
 
         .now-playing-art {
-            width: 56px;
-            height: 56px;
-            border-radius: 8px;
+            width: clamp(96px, 15vw, 144px);
+            height: clamp(96px, 15vw, 144px);
+            border-radius: 10px;
             object-fit: cover;
             flex-shrink: 0;
             background: var(--border);
@@ -1459,7 +1389,7 @@
 
         .now-playing-track {
             font-family: 'Clash Display', sans-serif;
-            font-size: 14px;
+            font-size: clamp(20px, 3vw, 32px);
             font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
@@ -1467,7 +1397,7 @@
         }
 
         .now-playing-artist {
-            font-size: 12px;
+            font-size: 15px;
             color: var(--muted);
             white-space: nowrap;
             overflow: hidden;
@@ -1490,7 +1420,7 @@
         }
 
         .now-playing-idle {
-            padding: 16px;
+            padding: 28px 24px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
             color: var(--muted);
@@ -1988,52 +1918,6 @@
                         <span class="eq"><span></span><span></span><span></span></span>
                         loading spotify...
                     </div>
-                </div>
-                <div class="artist-list" style="margin-top: 24px;">
-                    <div class="artist-item">
-                        <div class="artist-emoji">🎤</div>
-                        <div class="artist-info">
-                            <span class="artist-name">Kendrick Lamar</span>
-                            <span class="artist-genre">Hip-Hop</span>
-                        </div>
-                    </div>
-                    <div class="artist-item">
-                        <div class="artist-emoji">🔥</div>
-                        <div class="artist-info">
-                            <span class="artist-name">J. Cole</span>
-                            <span class="artist-genre">Hip-Hop</span>
-                        </div>
-                    </div>
-                    <div class="artist-item">
-                        <div class="artist-emoji">🎵</div>
-                        <div class="artist-info">
-                            <span class="artist-name">Travis Scott</span>
-                            <span class="artist-genre">Rap / Trap</span>
-                        </div>
-                    </div>
-                    <div class="artist-item">
-                        <div class="artist-emoji">🎧</div>
-                        <div class="artist-info">
-                            <span class="artist-name">Seedhe Maut</span>
-                            <span class="artist-genre">Desi Hip-Hop</span>
-                        </div>
-                    </div>
-                    <div class="artist-item">
-                        <div class="artist-emoji">🎶</div>
-                        <div class="artist-info">
-                            <span class="artist-name">Divine</span>
-                            <span class="artist-genre">Mumbai Rap</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="music-right">
-                <div class="spotify-embed-wrap">
-                    <!-- Replace the playlist URL below with your own Spotify playlist -->
-                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                </div>
-                <div style="margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--border); letter-spacing: 1px;">
-                    ↑ RapCaviar — my default coding soundtrack. <a href="https://open.spotify.com/user/madhavtiwari17" target="blank" style="color: var(--muted); border-bottom: 1px dashed var(--border);">see my profile →</a>
                 </div>
             </div>
         </div>
